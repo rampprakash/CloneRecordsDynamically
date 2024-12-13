@@ -166,5 +166,3 @@ namespace Plugins.Shared
             return clonedRecordId;
         }
     }
-}
-
