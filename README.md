@@ -71,3 +71,100 @@ Create a Custom Workflow Action  in my case bosch_CloneRecordRequest
 
 ![image](https://github.com/user-attachments/assets/998c131b-b1fb-4415-8219-662a1c870e18)
 
+
+
+# Custom Workflow
+
+
+using Microsoft.Xrm.Sdk.Query;
+using Microsoft.Xrm.Sdk.Workflow;
+using Microsoft.Xrm.Sdk;
+using System;
+using System.Activities;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace WorkflowActivity
+{
+    public class CloneVPDRecord : CodeActivity
+    {
+        [Input("EntityId")]
+        public InArgument<string> EntityId
+        {
+            get; set;
+        }
+
+        [Input("EntityLogicalName")]
+        public InArgument<string> EntityLogicalName
+        {
+            get; set;
+        }
+
+        [Output("clonedRecord")]
+        public OutArgument<string> clonedRecordOut
+        {
+            get; set;
+        }
+
+        protected override void Execute(CodeActivityContext executionContext)
+        {
+            //Create the tracing service
+            ITracingService tracingService = executionContext.GetExtension<ITracingService>();
+            //Create the context
+            IWorkflowContext context = executionContext.GetExtension<IWorkflowContext>();
+            IOrganizationServiceFactory serviceFactory = executionContext.GetExtension<IOrganizationServiceFactory>();
+            IOrganizationService service = serviceFactory.CreateOrganizationService(context.UserId);
+            Guid entityGuid = new Guid(this.EntityId.Get(executionContext));
+            tracingService.Trace(entityGuid.ToString());
+            string entityLogicalName = this.EntityLogicalName.Get(executionContext).ToString();
+            Entity originalRecord = Common.retrieve(entityLogicalName, entityGuid, new ColumnSet(true), service);
+            Guid clonedRecord = Common.cloneRecord(originalRecord, service, tracingService);
+            tracingService.Trace(clonedRecord.ToString());
+            clonedRecordOut.Set(executionContext, clonedRecord.ToString());
+        }
+    }
+}
+
+using Microsoft.Xrm.Sdk.Query;
+using Microsoft.Xrm.Sdk;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Plugins.Shared
+{
+    public class Common
+    {
+        public static Entity retrieve(string entityName, Guid entityId, ColumnSet columns, IOrganizationService service)
+        {
+            return service.Retrieve(entityName, entityId, columns);
+        }
+
+        public static Guid cloneRecord(Entity originalRecord, IOrganizationService service, ITracingService trace)
+        {
+            Entity clonedRecord = new Entity(originalRecord.LogicalName);
+            // ignore formname
+            foreach (var attribute in originalRecord.Attributes)
+            {
+                if (attribute.Key != originalRecord.LogicalName + "id" &&
+                    attribute.Key != "createdon" &&
+                    attribute.Key != "createdby" &&
+                    attribute.Key != "modifiedon" &&
+                    attribute.Key != "modifiedby")
+                {
+                    if (originalRecord.Attributes.Contains(attribute.Key))
+                    {
+                        clonedRecord[attribute.Key] = attribute.Value;
+                    }
+                }
+            }
+            Guid clonedRecordId = service.Create(clonedRecord);
+            return clonedRecordId;
+        }
+    }
+}
+
