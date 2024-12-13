@@ -17,14 +17,14 @@ cloneRecord: function (primaryControl, selectedRecordid) {
         var formContext = primaryControl;
 
         var parameters = {};
-        parameters.EntityLogicalName = "fwc_vpdform";
+        parameters.EntityLogicalName = "account";
         if (selectedRecordid != null && selectedRecordid != undefined) {
             parameters.EntityId = selectedRecordid.replace("{", "").replace("}", "");
         } else {
             parameters.EntityId = formContext.data.entity.getId().replace("{", "").replace("}", "");
         }
 
-        var fwc_CloneVPDRecordRequest = {
+        var CloneRecordRequest = {
             EntityLogicalName: parameters.EntityLogicalName,
             EntityId: parameters.EntityId,
 
@@ -43,16 +43,16 @@ cloneRecord: function (primaryControl, selectedRecordid) {
                         }
                     },
                     operationType: 0,
-                    operationName: "fwc_CloneVPDRecord"
+                    operationName: "bosch_CloneRecordRequest"
                 };
             }
         };
 
-        Xrm.WebApi.online.execute(fwc_CloneVPDRecordRequest).then(
+        Xrm.WebApi.online.execute(bosch_CloneRecordRequest).then(
             function success(result) {
                 if (result.ok) {
                     var results = result.json().then(function (response) {
-                        Xrm.Utility.openEntityForm("fwc_vpdform", response.clonedRecord);
+                        Xrm.Utility.openEntityForm("account", response.clonedRecord);
 
                     });
                 }
@@ -63,3 +63,11 @@ cloneRecord: function (primaryControl, selectedRecordid) {
         );
     }
 }
+
+
+# Workflow
+
+Create a Custom Workflow Action  in my case bosch_CloneRecordRequest
+
+![image](https://github.com/user-attachments/assets/998c131b-b1fb-4415-8219-662a1c870e18)
+
